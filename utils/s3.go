@@ -2,7 +2,9 @@ package utils
 
 import (
 	"bytes"
+	"net/url"
 	"os"
+	"strings"
 	"template-system/config"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -41,4 +43,17 @@ func UploadFileToS3(filePath string) (string, error) {
 	}
 
 	return result.Location, nil
+}
+
+// ExtractS3Key extracts the key from a full S3 URL
+func ExtractS3Key(fullURL string) (string, error) {
+	// Parse the URL
+	parsedURL, err := url.Parse(fullURL)
+	if err != nil {
+		return "", err
+	}
+
+	// Extract the key part (path without leading '/')
+	s3Key := strings.TrimPrefix(parsedURL.Path, "/")
+	return s3Key, nil
 }

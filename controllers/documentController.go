@@ -3,8 +3,9 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
+
+	// "os"
+	// "path/filepath"
 	"template-system/services"
 
 	"github.com/gin-gonic/gin"
@@ -40,35 +41,27 @@ func GetGeneratedDocuments(c *gin.Context) {
 }
 
 func DownloadDocument(c *gin.Context) {
+	// Get document ID from the request
 	documentID := c.Param("id")
+
+	// Fetch the S3 path for the document
 	documentPath, err := services.GetDocumentPathByID(documentID)
 	if err != nil {
-		log.Printf("Error getting document path: %v", err)
+		log.Printf("Error fetching document path for ID %s: %v", documentID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
 		return
 	}
-	log.Printf("Document path: %s", documentPath)
 
-	// Ensure the tmp directory exists
-	tmpDir := "tmp"
-	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
-		err := os.Mkdir(tmpDir, 0755)
-		if err != nil {
-			log.Printf("Error creating tmp directory: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	}
-
-	// Download from S3 to a temporary local file
-	localPath := filepath.Join(tmpDir, filepath.Base(documentPath))
-	err = services.DownloadFileFromS3(documentPath, localPath)
+	// Generate a presigned URL for the document
+	urlStr, err := services.GeneratePresignedURL(documentPath)
 	if err != nil {
-		log.Printf("Error downloading file from S3: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to download document"})
+		log.Printf("Error generating pre-signed URL for document ID %s: %v", documentID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate download link"})
 		return
 	}
 
-	// Serve the file
-	c.File(localPath)
+	// Return the presigned URL in the response
+	// c.Redirect(http.StatusFound, urlStr)
+	c.JSON(http.StatusOK, gin.H{"download_url": urlStr})
+
 }

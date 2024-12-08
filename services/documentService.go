@@ -3,6 +3,7 @@ package services
 import (
 	"archive/zip"
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,13 +11,16 @@ import (
 	"template-system/config"
 	"template-system/models"
 	"template-system/utils"
+	"time"
 
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
+	// "github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
 )
 
@@ -134,33 +138,59 @@ func GetGeneratedDocumentsByUserID(userID string) ([]models.GeneratedDocument, e
 
 func GetDocumentPathByID(documentID string) (string, error) {
 	var document models.GeneratedDocument
+
+	// Fetch the document path from the database
 	err := utils.DB.Where("id = ?", documentID).First(&document).Error
 	if err != nil {
 		log.Printf("Error getting document by ID: %v", err)
 		return "", err
 	}
+
+	// Sanitize the file path to avoid Windows-specific issues
+	document.FilePath = strings.ReplaceAll(document.FilePath, "\\", "/")
 	return document.FilePath, nil
 }
 
-// DownloadFileFromS3 downloads a file from S3 to a local path
-func DownloadFileFromS3(s3Path, localPath string) error {
+func GeneratePresignedURL(fullURL string) (string, error) {
+
+	// Extract the S3 key from the full URL
+	s3Key, err := utils.ExtractS3Key(fullURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to extract S3 key: %v", err)
+	}
+
+	// Initialize the AWS session
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(config.AppConfig.S3_REGION),
+		Credentials: credentials.NewStaticCredentials(
+			config.AppConfig.S3_ACCESS_KEY,
+			config.AppConfig.S3_SECRET_KEY,
+			"",
+		),
 	})
 	if err != nil {
-		return err
+		log.Printf("Error initializing AWS session: %v", err)
+		return "", err
 	}
 
-	downloader := s3manager.NewDownloader(sess)
-	file, err := os.Create(localPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	// Create S3 client
+	svc := s3.New(sess)
 
-	_, err = downloader.Download(file, &s3.GetObjectInput{
+	// Log details for debugging
+	log.Printf("Generating presigned URL for bucket: %s, key: %s", config.AppConfig.S3_BUCKET, s3Key)
+
+	// Generate the presigned URL
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(config.AppConfig.S3_BUCKET),
-		Key:    aws.String(s3Path),
+		Key:    aws.String(s3Key),
 	})
-	return err
+
+	urlStr, err := req.Presign(15 * time.Minute)
+	if err != nil {
+		log.Printf("Error generating presigned URL: %v", err)
+		return "", err
+	}
+
+	log.Printf("Generated presigned URL: %s", urlStr)
+	return urlStr, nil
 }
