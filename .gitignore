@@ -10,9 +10,6 @@
 # Test binary, built with `go test -c`
 *.test
 
-# Go workspace file
-go.work
-
 # Dependency directories (remove the comment if you use vendoring)
 vendor/
 
@@ -33,3 +30,6 @@ vendor/
 *.cvg
 *.tmp
 .DS_Store
+
+# Environment variables
+.env
