@@ -11,5 +11,7 @@ func InitAuthRoutes(r *gin.Engine) {
 	{
 		authGroup.POST("/register", controllers.Register)
 		authGroup.POST("/login", controllers.Login)
+		authGroup.POST("/reset-password", controllers.RequestPasswordReset)
+		authGroup.POST("/reset-password/confirm", controllers.ResetPassword)
 	}
 }

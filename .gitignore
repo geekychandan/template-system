@@ -36,3 +36,4 @@ vendor/
 .
 # Ignore documents folder 
 documents/
+temp/

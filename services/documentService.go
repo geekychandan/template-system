@@ -151,12 +151,61 @@ func GetDocumentPathByID(documentID string) (string, error) {
 	return document.FilePath, nil
 }
 
-func GeneratePresignedURL(fullURL string) (string, error) {
+// func GeneratePresignedURL(fullURL string) (string, error) {
 
+// 	// Extract the S3 key from the full URL
+// 	s3Key, err := utils.ExtractS3Key(fullURL)
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to extract S3 key: %v", err)
+// 	}
+
+// 	// Initialize the AWS session
+// 	sess, err := session.NewSession(&aws.Config{
+// 		Region: aws.String(config.AppConfig.S3_REGION),
+// 		Credentials: credentials.NewStaticCredentials(
+// 			config.AppConfig.S3_ACCESS_KEY,
+// 			config.AppConfig.S3_SECRET_KEY,
+// 			"",
+// 		),
+// 	})
+// 	if err != nil {
+// 		log.Printf("Error initializing AWS session: %v", err)
+// 		return "", err
+// 	}
+
+// 	// Create S3 client
+// 	svc := s3.New(sess)
+
+// 	// Log details for debugging
+// 	log.Printf("Generating presigned URL for bucket: %s, key: %s", config.AppConfig.S3_BUCKET, s3Key)
+
+// 	// Generate the presigned URL
+// 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+// 		Bucket: aws.String(config.AppConfig.S3_BUCKET),
+// 		Key:    aws.String(s3Key),
+// 	})
+
+// 	urlStr, err := req.Presign(15 * time.Minute)
+// 	if err != nil {
+// 		log.Printf("Error generating presigned URL: %v", err)
+// 		return "", err
+// 	}
+
+// 	log.Printf("Generated presigned URL: %s", urlStr)
+// 	return urlStr, nil
+// }
+
+func GeneratePresignedURL(fullURL string) (string, error) {
 	// Extract the S3 key from the full URL
 	s3Key, err := utils.ExtractS3Key(fullURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract S3 key: %v", err)
+	}
+
+	// Check if the presigned URL is already in the cache
+	if cachedURL, found := utils.Cache.Get(s3Key); found {
+		log.Printf("Cache hit: Presigned URL found for key: %s", s3Key)
+		return cachedURL.(string), nil
 	}
 
 	// Initialize the AWS session
@@ -191,6 +240,8 @@ func GeneratePresignedURL(fullURL string) (string, error) {
 		return "", err
 	}
 
-	log.Printf("Generated presigned URL: %s", urlStr)
+	// Cache the generated presigned URL
+	utils.Cache.Set(s3Key, urlStr, 15*time.Minute)
+	log.Printf("Generated and cached presigned URL: %s", urlStr)
 	return urlStr, nil
 }
