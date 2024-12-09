@@ -36,7 +36,7 @@ A robust template system that allows users to upload, generate, and download doc
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/your-username/template-system.git
+    git clone https://github.com/geekychandan/template-system.git
     cd template-system
     ```
 
@@ -81,7 +81,7 @@ A robust template system that allows users to upload, generate, and download doc
 #### Authentication
 
 - **Register**
-  - `POST /auth/register`
+  - `POST api/auth/register`
   - Request Body:
     ```json
     {
@@ -91,7 +91,7 @@ A robust template system that allows users to upload, generate, and download doc
     ```
 
 - **Login**
-  - `POST /auth/login`
+  - `POST api/auth/login`
   - Request Body:
     ```json
     {
@@ -101,7 +101,7 @@ A robust template system that allows users to upload, generate, and download doc
     ```
 
 - **Request Password Reset**
-  - `POST /auth/reset-password`
+  - `POST api/auth/reset-password`
   - Request Body:
     ```json
     {
@@ -110,7 +110,7 @@ A robust template system that allows users to upload, generate, and download doc
     ```
 
 - **Reset Password**
-  - `POST /auth/reset-password/confirm`
+  - `POST api/auth/reset-password/confirm`
   - Request Body:
     ```json
     {
@@ -122,22 +122,22 @@ A robust template system that allows users to upload, generate, and download doc
 #### Templates
 
 - **Upload Template**
-  - `POST /templates/upload`
+  - `POST api/templates/upload`
   - Headers: `Authorization: Bearer <your_jwt_token>`
   - Form-data: `template` (File)
 
 - **Get User Templates**
-  - `GET /templates`
+  - `GET api/templates`
   - Headers: `Authorization: Bearer <your_jwt_token>`
 
 - **Get Placeholders**
-  - `GET /templates/:id/placeholders`
+  - `GET api/templates/:id/placeholders`
   - Headers: `Authorization: Bearer <your_jwt_token>`
 
 #### Documents
 
 - **Generate Document**
-  - `POST /documents/:id/generate`
+  - `POST api/documents/:id/generate`
   - Headers: `Authorization: Bearer <your_jwt_token>`
   - Request Body:
     ```json
@@ -148,11 +148,11 @@ A robust template system that allows users to upload, generate, and download doc
     ```
 
 - **Get User Documents**
-  - `GET /documents`
+  - `GET api/documents`
   - Headers: `Authorization: Bearer <your_jwt_token>`
 
 - **Download Document**
-  - `GET /documents/:id/download`
+  - `GET api/documents/:id/download`
   - Headers: `Authorization: Bearer <your_jwt_token>`
 
 ## Configuration
@@ -183,6 +183,7 @@ template-system/
 │   ├── database.go
 │   ├── email.go
 │   └── s3.go
+│   └── cache.go
 ├── .gitignore
 ├── go.mod
 ├── go.sum
